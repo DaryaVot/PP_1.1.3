@@ -7,75 +7,76 @@ import jm.task.core.jdbc.model.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import static jm.task.core.jdbc.util.Util.getConnection;
 
 public class UserDaoJDBCImpl implements UserDao {
+
+    private static final Logger logger = Logger.getLogger
+            (UserDaoJDBCImpl.class.getName());
+
     public UserDaoJDBCImpl() {
 
     }
 
 
     public void createUsersTable() {
-        //Statement statement = null;
-        String sql = "CREATE TABLE IF NOT EXISTS users2 " +
-                "(ID INTEGER AUTO_INCREMENT PRIMARY KEY, name VARCHAR(30), " +
-                "lastName VARCHAR(30), age TINYINT);";
         try (Connection connection = Util.getConnection();
-                Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
+             PreparedStatement preparedStatement = connection.prepareStatement
+                     ("CREATE TABLE IF NOT EXISTS users2 " +
+                             "(ID INTEGER AUTO_INCREMENT PRIMARY KEY, name VARCHAR(30), " +
+                             "lastName VARCHAR(30), age TINYINT);")) {
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            logger.log(Level.SEVERE, "Error of Table creation" + e.getMessage());
         }
-        System.out.println("Таблица user успешно создана");
+        logger.log(Level.SEVERE, "The table has been created");
 
     }
 
     public void dropUsersTable() {
-        //Statement statement = null;
-        String sql = "DROP TABLE IF EXISTS users2;";
         try (Connection connection = Util.getConnection();
-                Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
+             PreparedStatement preparedStatement = connection.prepareStatement("DROP TABLE IF EXISTS users2;")) {
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            logger.log(Level.SEVERE, "Error of Table delete" + e.getMessage());
         }
-        System.out.println("Таблица user успешно удалена");
+        logger.log(Level.SEVERE, "Table deleted");
     }
 
 
     public void saveUser(String name, String lastName, byte age) {
-        // PreparedStatement preparedStatement = null;
-        String sql = "INSERT INTO users2(name, lastName, age) VALUES (?, ?, ?);";
         if (name == null || name.isBlank() || lastName == null || lastName.isBlank()) {
-            throw new IllegalArgumentException("Имя и фамилия не должны быть пустыми.");
+            throw new IllegalArgumentException("Name and LastNabe can't be null");
         }
         try (Connection connection = Util.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = connection.prepareStatement
+                     ("INSERT INTO users2(name, lastName, age) VALUES (?, ?, ?);")) {
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            logger.log(Level.SEVERE, "Error of User save" + e.getMessage());
         }
-
+        logger.log(Level.SEVERE, "User saved");
     }
 
     public void removeUserById(long id) {
-        //PreparedStatement preparedStatement = null;
-        String sql = "DELETE FROM users2 WHERE ID = ?;";
         try (Connection connection = Util.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = connection.prepareStatement
+                     ("DELETE FROM users2 WHERE ID = ?;")) {
             preparedStatement.setLong(1, id);
             int rowsDeleted = preparedStatement.executeUpdate();
             if (rowsDeleted > 0) {
-                System.out.println("Запись успешно удалена");
+                logger.log(Level.SEVERE, "User deleted");
             } else {
-                System.out.println("Не найдено записей для удаления");
+                logger.log(Level.SEVERE, "Not found Users for delete");
             }
         } catch (SQLException e) {
-            System.err.println("Ошибка при удалении записи: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error of User delete" + e.getMessage());
         }
     }
 
@@ -84,37 +85,34 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "SELECT * FROM users2;";
 
         try (Connection connection = Util.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = connection.prepareStatement
+                     ("SELECT * FROM users2;")) {
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                //long id = resultSet.getLong("id");
-                String name = resultSet.getString("name");
-                String lastName = resultSet.getString("lastName");
-                byte age = resultSet.getByte("age");
-                User user = new User(name, lastName, age);
+                User user = new User(resultSet.getString("name"), resultSet.getString("lastName"),
+                        resultSet.getByte("age"));
                 allUsers.add(user);
             }
         } catch (SQLException e) {
-            System.err.println("Ошибка при получении пользователей: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error of getting list Users" + e.getMessage());
         }
         if (!allUsers.isEmpty()) {
             for (User user : allUsers) {
                 System.out.println(user);
             }
         } else {
-            System.out.println("Пользователи не найдены.");
+            logger.log(Level.SEVERE, "Users not founded");
         }
         return allUsers;
     }
 
     public void cleanUsersTable() {
-        //Statement statement = null;
-        String sql = "TRUNCATE TABLE users2";
         try (Connection connection = Util.getConnection();
-           Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
+             PreparedStatement preparedStatement = connection.prepareStatement
+                     ("TRUNCATE TABLE users2")) {
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("Ошибка при очещении таблицы");
+            logger.log(Level.SEVERE, "Error of clearing Table" + e.getMessage());
         }
     }
 }
